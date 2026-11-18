@@ -43,7 +43,7 @@ test = [
 ]
 
 [project.urls]
-Repository = "https://github.com/willemkokke/livery"
+Repository = "https://github.com/liveryhq/livery"
 
 # The coverage verbs: the leg's entry, the union, and the floors and
 # marks a person runs, which the extension's plugin mounts while a

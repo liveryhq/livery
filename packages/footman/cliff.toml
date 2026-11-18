@@ -34,7 +34,7 @@ sort_commits = "oldest"
 # The pull request a squash names becomes a link. The number stays
 # visible when nothing resolves it.
 commit_preprocessors = [
-  { pattern = '\(#([0-9]+)\)', replace = "([#${1}](https://github.com/willemkokke/livery/pull/${1}))" },
+  { pattern = '\(#([0-9]+)\)', replace = "([#${1}](https://github.com/liveryhq/livery/pull/${1}))" },
 ]
 # Keep a Changelog's sections. The comment prefix only orders the
 # groups, and the template strips it before printing.
@@ -54,7 +54,7 @@ commit_parsers = [
 # token is in reach and says so; the entry is then written without
 # its authors.
 [remote.github]
-owner = "willemkokke"
+owner = "liveryhq"
 repo = "livery"
 
 [changelog]

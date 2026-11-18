@@ -76,7 +76,7 @@ description = "The livery ecosystem: one forge interface and the workshop that r
 
 [forge]
 kind = "github"
-owner = "willemkokke"
+owner = "liveryhq"
 
 [toolroom]
 # The catalogue the lock and the stubs resolve against. This

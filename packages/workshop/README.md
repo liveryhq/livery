@@ -17,4 +17,4 @@ repository's whole `tasks.py` is `plugin("livery.workshop")`.
   exits beside it.
 - The release train (`fm release.*`) and the update wave (`fm update`).
 
-Part of the [livery monorepo](https://github.com/willemkokke/livery).
+Part of the [livery monorepo](https://github.com/liveryhq/livery).

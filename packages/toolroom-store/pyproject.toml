@@ -35,7 +35,7 @@ test = [
 ]
 
 [project.urls]
-Repository = "https://github.com/willemkokke/livery"
+Repository = "https://github.com/liveryhq/livery"
 
 [tool.uv.build-backend]
 # The importable package is livery.toolroom.store, its entry module the
