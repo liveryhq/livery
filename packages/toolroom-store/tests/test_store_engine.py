@@ -1188,6 +1188,179 @@ def test_a_pypi_graph_installs_into_its_own_venv_and_places_its_own_scripts(
     assert not store_of(home).ensure(record, "1.0.0", graph=graph).installed
 
 
+class _PythonTool:
+    """A `pypi` graph install whose venv records the Python it was made with.
+
+    `runs` is what the venv's interpreter answers when asked its
+    version, empty for an interpreter that does not start; `asked`
+    counts the questions.
+    """
+
+    def __init__(self, tmp_path: Path, made_with: str, runs: str) -> None:
+        self.graph = tmp_path / "clang_tidy.txt"
+        self.graph.write_text("clang-tidy==20.1.0 --hash=sha256:00\n", encoding="utf-8")
+        self.made_with = made_with
+        self.runs = runs
+        self.installs = 0
+        self.asked = 0
+
+    def install(self, argv: list[str], env: dict[str, str]) -> int:
+        if argv[1] == "venv":
+            self.installs += 1
+            venv = Path(argv[-1])
+            made = _engine._venv_bin(venv)
+            made.mkdir(parents=True, exist_ok=True)
+            for script in ("clang-tidy", "python"):
+                (made / f"{script}{EXE}").write_text("#!/bin/sh\n")
+            (venv / "pyvenv.cfg").write_text(
+                f"home = /usr/bin\nversion_info = {self.made_with}\n", encoding="utf-8"
+            )
+        return 0
+
+    def read(self, argv: list[str]) -> str:
+        if "sys.version_info" in argv[-1]:
+            self.asked += 1
+            return self.runs
+        return f'["clang-tidy{EXE}"]'
+
+
+def test_a_pypi_venv_whose_interpreter_starts_another_python_is_installed_again(
+    home: Home, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An operating system upgrade points the venv's interpreter at another Python.
+
+    A venv made on 3.12 then starts on 3.14, which reads none of its
+    packages, so the install is stale: the progress names both
+    versions and the store installs it again.
+    """
+    tool = _PythonTool(tmp_path, made_with="3.12.3", runs="3.12")
+    monkeypatch.setattr(_engine, "run_installer", tool.install)
+    monkeypatch.setattr(_engine, "read_version", tool.read)
+    record = _uv_tool("clang_tidy", "20.1.0")
+    assert store_of(home).ensure(record, "20.1.0", graph=tool.graph).installed
+    tool.runs = "3.14"
+    events: list[Event] = []
+    store = Store(home, host=HOST, progress=events.append)
+    again = store.ensure(record, "20.1.0", graph=tool.graph)
+    assert again.installed and tool.installs == 2
+    stale = [event.detail for event in events if event.action == "stale"]
+    assert len(stale) == 1
+    assert "made with Python 3.12" in stale[0] and "now starts Python 3.14" in stale[0]
+
+
+def test_a_pypi_venv_whose_interpreter_is_gone_or_will_not_start_is_installed_again(
+    home: Home, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tool = _PythonTool(tmp_path, made_with="3.12.3", runs="3.12")
+    monkeypatch.setattr(_engine, "run_installer", tool.install)
+    monkeypatch.setattr(_engine, "read_version", tool.read)
+    record = _uv_tool("clang_tidy", "20.1.0")
+    store = store_of(home)
+    ensured = store.ensure(record, "20.1.0", graph=tool.graph)
+    # Gone: the file the venv's interpreter resolved to is removed.
+    _engine._venv_python(ensured.tool_dir / "venv").unlink()
+    assert store.ensure(record, "20.1.0", graph=tool.graph).installed
+    assert tool.installs == 2
+    # Will not start: the interpreter is there and answers nothing.
+    tool.runs = ""
+    marker = ensured.tool_dir / "venv" / _engine.RAN_ON
+    marker.unlink(missing_ok=True)
+    assert store.ensure(record, "20.1.0", graph=tool.graph).installed
+    assert tool.installs == 3
+
+
+def test_an_unchanged_interpreter_is_asked_once_and_then_read_from_its_stamp(
+    home: Home, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A probe that finds the interpreter's file as last answered asks nothing.
+
+    The first probe after the install asks the interpreter and records
+    its stamp; every later one costs a stat. A changed file is asked
+    again, and an answer that still matches keeps the install.
+    """
+    tool = _PythonTool(tmp_path, made_with="3.12.3", runs="3.12")
+    monkeypatch.setattr(_engine, "run_installer", tool.install)
+    monkeypatch.setattr(_engine, "read_version", tool.read)
+    record = _uv_tool("clang_tidy", "20.1.0")
+    store = store_of(home)
+    ensured = store.ensure(record, "20.1.0", graph=tool.graph)
+    assert not store.ensure(record, "20.1.0", graph=tool.graph).installed
+    assert tool.asked == 1
+    assert (ensured.tool_dir / "venv" / _engine.RAN_ON).is_file()
+    assert not store.ensure(record, "20.1.0", graph=tool.graph).installed
+    assert tool.asked == 1
+    # A patch release rewrites the interpreter's file: asked again, kept.
+    python = _engine._venv_python(ensured.tool_dir / "venv")
+    python.write_text("#!/bin/sh\n# 3.12.4\n")
+    assert not store.ensure(record, "20.1.0", graph=tool.graph).installed
+    assert tool.asked == 2 and tool.installs == 1
+
+
+def test_a_venv_that_records_no_version_is_not_judged(tmp_path: Path) -> None:
+    """No `pyvenv.cfg`, or one that names no version, gives nothing to compare."""
+    assert _engine._stale_venv(tmp_path) == ""
+    (tmp_path / "pyvenv.cfg").write_text("home = /usr/bin\nversion_info = dev\n")
+    assert _engine._stale_venv(tmp_path) == ""
+
+
+def test_the_interpreter_home_names_is_stamped_on_windows(
+    home: Home, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A Windows venv's interpreter is a launcher that stays put.
+
+    The interpreter it starts, named by `home`, is stamped too, so a
+    change there is asked again on Windows; elsewhere the venv's own
+    interpreter is the link that moves, and `home` is not read.
+    """
+    tool = _PythonTool(tmp_path, made_with="3.12.3", runs="3.12")
+    monkeypatch.setattr(_engine, "run_installer", tool.install)
+    monkeypatch.setattr(_engine, "read_version", tool.read)
+    record = _uv_tool("clang_tidy", "20.1.0")
+    store = store_of(home)
+    ensured = store.ensure(record, "20.1.0", graph=tool.graph)
+    base = tmp_path / "base"
+    base.mkdir()
+    (base / "python.exe").write_text("base\n")
+    config = ensured.tool_dir / "venv" / "pyvenv.cfg"
+    config.write_text(f"home = {base}\nversion_info = 3.12.3\n", encoding="utf-8")
+    assert not store.ensure(record, "20.1.0", graph=tool.graph).installed
+    assert tool.asked == 1
+    (base / "python.exe").write_text("base, patched\n")
+    assert not store.ensure(record, "20.1.0", graph=tool.graph).installed
+    assert tool.asked == (2 if sys.platform == "win32" else 1)
+
+
+def test_a_uv_tool_venv_whose_interpreter_changed_is_installed_again(
+    home: Home, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A tool locked before graphs installs through `uv tool`, venv and all."""
+    answer = {"runs": "3.12"}
+    installs: list[list[str]] = []
+
+    def installing(argv: list[str], env: dict[str, str]) -> int:
+        installs.append(argv)
+        bin_dir = Path(env["UV_TOOL_BIN_DIR"])
+        bin_dir.mkdir(parents=True, exist_ok=True)
+        (bin_dir / f"ruff{EXE}").write_text("launcher")
+        venv = Path(env["UV_TOOL_DIR"]) / "ruff"
+        made = _engine._venv_bin(venv)
+        made.mkdir(parents=True, exist_ok=True)
+        (made / f"python{EXE}").write_text("#!/bin/sh\n")
+        (venv / "pyvenv.cfg").write_text("version_info = 3.12.3\n", encoding="utf-8")
+        return 0
+
+    monkeypatch.setattr(_engine, "run_installer", installing)
+    monkeypatch.setattr(_engine, "read_version", lambda argv: answer["runs"])
+    record = _uv_tool("ruff", "1.0.0")
+    store = store_of(home)
+    assert store.ensure(record, "1.0.0").installed
+    assert not store.ensure(record, "1.0.0").installed
+    answer["runs"] = "3.14"
+    (home.uv / "tools" / "ruff@1.0.0" / "tools" / "ruff" / _engine.RAN_ON).unlink()
+    assert store.ensure(record, "1.0.0").installed
+    assert len(installs) == 2
+
+
 def test_an_npm_graph_installs_the_lockfile_and_resolves_nothing(
     home: Home, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

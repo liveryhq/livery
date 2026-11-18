@@ -17,6 +17,7 @@ progress callback. Reach for [livery.toolroom.store.Store][].
 
 from __future__ import annotations
 
+import contextlib
 import fnmatch
 import json
 import os
@@ -93,7 +94,8 @@ class Event:
     Attributes:
         name: The tool.
         version: The version.
-        action: A short verb: `probe`, `wait`, `fetch`, `install`, `link`.
+        action: A short verb: `probe`, `wait`, `fetch`, `install`, `link`,
+            or `stale` for an install the store replaces.
 
         detail: Free text a renderer may show: a URL, a path, a reason.
     """
@@ -333,6 +335,101 @@ def _console_scripts(venv: Path, package: str) -> tuple[str, ...]:
         if isinstance(found, list):
             return tuple(str(name) for name in found)
     return ()
+
+
+#: The file in a Python tool's venv that records the interpreter the
+#: venv last ran on, so a probe asks the interpreter again only when
+#: that interpreter's file changed.
+RAN_ON = ".toolroom-ran-on"
+
+
+def _made_with(venv: Path) -> str:
+    """The `major.minor` *venv* was made with, by its `pyvenv.cfg`; empty if unknown."""
+    try:
+        text = (venv / "pyvenv.cfg").read_text(encoding="utf-8")
+    except OSError:
+        return ""
+    for line in text.splitlines():
+        key, _, value = line.partition("=")
+        if key.strip() in ("version_info", "version"):
+            parts = value.strip().split(".")
+            if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
+                return f"{parts[0]}.{parts[1]}"
+    return ""
+
+
+def _interpreter_stamp(venv: Path) -> str:
+    """The file *venv*'s interpreter resolves to, with its size and time.
+
+    On Windows the venv's interpreter is a launcher that stays as it
+    is when the interpreter it starts changes, so that interpreter,
+    named by `home` in `pyvenv.cfg`, is stamped as well.
+
+    Raises:
+        OSError: when the interpreter no longer exists.
+    """
+    targets = [_venv_python(venv).resolve(strict=True)]
+    if sys.platform == "win32":
+        home = ""
+        with contextlib.suppress(OSError):
+            for line in (venv / "pyvenv.cfg").read_text(encoding="utf-8").splitlines():
+                key, _, value = line.partition("=")
+                if key.strip() == "home":
+                    home = value.strip()
+        base = Path(home) / "python.exe"
+        if home and base.is_file():
+            targets.append(base.resolve())
+    lines: list[str] = []
+    for target in targets:
+        stats = target.stat()
+        lines.append(f"{target}\t{stats.st_size}\t{stats.st_mtime_ns}")
+    return "\n".join(lines) + "\n"
+
+
+def _stale_venv(venv: Path) -> str:
+    """Why *venv* no longer runs on the interpreter it was made with; empty if it does.
+
+    A venv links to an interpreter outside the store, found by a name
+    the machine can point elsewhere: an operating system upgrade moves
+    `/usr/bin/python3` from 3.12 to 3.14, and a venv made on 3.12 then
+    starts on 3.14, which reads none of its packages. The venv's
+    `pyvenv.cfg` records the version it was made with; the interpreter
+    is asked its own only when its file changed since the last answer
+    recorded in `RAN_ON`, so an unchanged venv costs a stat. A venv
+    with no recorded version is not judged.
+    """
+    made = _made_with(venv)
+    if not made:
+        return ""
+    python = _venv_python(venv)
+    try:
+        stamp = _interpreter_stamp(venv)
+    except OSError:
+        return f"it was made with Python {made}, and its interpreter {python} is gone"
+    marker = venv / RAN_ON
+    with contextlib.suppress(OSError):
+        if marker.read_text(encoding="utf-8") == stamp:
+            return ""
+    runs = _version_in(
+        read_version(
+            [str(python), "-c", "import sys; print('%d.%d' % sys.version_info[:2])"]
+        )
+    )
+    if runs != made:
+        now = f"starts Python {runs}" if runs else "does not start"
+        return f"it was made with Python {made}, and its interpreter {python} now {now}"
+    with contextlib.suppress(OSError):
+        marker.write_text(stamp, encoding="utf-8")
+    return ""
+
+
+def _tool_venvs(tool_dir: Path) -> tuple[Path, ...]:
+    """The venvs a `pypi` tool's directory holds: a graph's own, or uv's tool venvs."""
+    venvs = [tool_dir / "venv"]
+    tools = tool_dir / "tools"
+    if tools.is_dir():
+        venvs.extend(sorted(path for path in tools.iterdir() if path.is_dir()))
+    return tuple(venv for venv in venvs if (venv / "pyvenv.cfg").is_file())
 
 
 def _launchers(bin_dir: Path) -> tuple[str, ...]:
@@ -870,11 +967,22 @@ class Store:
         Without one, uv resolves and installs as it did, which is what
         a tool locked before a graph was written for it gets, and its
         launchers are uv's own.
+
+        An install whose venv no longer runs on the interpreter it was
+        made with is not present: the progress names why, and it is
+        removed and installed again.
         """
         self._progress(Event(name, version, "probe"))
         present = self._probe_delegated(name, "pypi", version)
         if present is not None:
-            return present
+            stale = next(
+                (why for why in map(_stale_venv, _tool_venvs(present.tool_dir)) if why),
+                "",
+            )
+            if not stale:
+                return present
+            self._progress(Event(name, version, "stale", stale))
+            shutil.rmtree(present.tool_dir, ignore_errors=True)
         tool_dir = self.home.uv / "tools" / f"{name}@{version}"
         bin_dir = tool_dir / "bin"
         bin_dir.mkdir(parents=True, exist_ok=True)
