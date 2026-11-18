@@ -5,7 +5,7 @@ claim checked against the source, file and line. Almost all of it has
 shipped in the releases since. The file does two jobs: the road ahead, and
 — for posterity — the original audit preserved item by item, each with the
 release that closed it. The full stories live in the
-[changelog](https://willemkokke.github.io/footman/changelog/).
+[changelog](https://livery.willem.net/packages/footman/changelog/).
 
 **Where footman stands (2026-08-20, v0.43.0, Beta on PyPI).** The typed core
 — coercion, chain grammar, manifest, scheduler, cascade — held up; everything
@@ -15,7 +15,7 @@ and functionally tested on five real shells, one `--json` envelope for
 machines, docstring-driven parameter docs, markdown export of the task
 surface, a progress bar that earns its confidence from duration history, and
 one colour palette across the whole CLI. The typed tool surface moved to
-[toolroom](https://willemkokke.github.io/toolroom/), which footman neither
+[toolroom](https://livery.willem.net/packages/toolroom/), which footman neither
 imports nor names. Coverage is enforced at ≥ 92%, CI runs 3 OS × Python
 3.11–3.14 including free-threaded, and a tag cannot publish unless CI and
 the version checks agree.
@@ -33,7 +33,7 @@ that closed it:
   one source, so each fix lands in three places at once.
 - ~~**The tools surface, properly**~~ — **delivered, and no longer
   footman's to ship.** The surface moved to
-  [toolroom](https://willemkokke.github.io/toolroom/) unchanged in what it
+  [toolroom](https://livery.willem.net/packages/toolroom/) unchanged in what it
   does, and every clause of this item landed there: stubs generated from
   each tool's own metadata (click's `opts`/`secondary_opts` read as data),
   a reference page per tool, a `tools.audit` task that fails on drift, and
@@ -43,7 +43,7 @@ that closed it:
   neither imports nor names it.
 - **The stability promise, and the bake cycle after it.** The page landed
   in 0.40.0:
-  [Stability](https://willemkokke.github.io/footman/stability/) names the
+  [Stability](https://livery.willem.net/packages/footman/stability/) names the
   four surfaces a project builds on — the public API, the CLI grammar, the
   `--json` envelope, the `[tool.footman]` keys — and says plainly that the
   manifest file and the caches are *not* among them, which the original
@@ -128,7 +128,7 @@ which forces the run sequential, because a task holding the real terminal
 cannot share it. Without a TTY nothing hangs and nothing silently
 proceeds: a defaulted parameter falls back, a required one refuses with a
 taught message naming the flag, and `--yes` / `--no-input` decide for CI up
-front. See [Asking for input](https://willemkokke.github.io/footman/input/).
+front. See [Asking for input](https://livery.willem.net/packages/footman/input/).
 
 Recording the reversal rather than quietly deleting the line: a "never"
 that a later design answers is worth more as a worked example than as an
@@ -273,7 +273,7 @@ contract, `doc()`, agents + llms.txt), 0.11.0 (docstring parameter docs, the
 stdout/stderr contract, markdown export), 0.12.0 (the progress bar with
 duration history, `-j/--jobs`, `FOOTMAN_CACHE_DIR`, one colour palette,
 Beta). The train kept its cadence past the audit's horizon; the
-[changelog](https://willemkokke.github.io/footman/changelog/) carries every
+[changelog](https://livery.willem.net/packages/footman/changelog/) carries every
 stop from 0.13.0 on.
 
 ### §11 The original backlog

@@ -5,7 +5,7 @@ whatever else `check` does, it eventually shells out to ruff, to pytest, to
 git. So making that one act ergonomic was worth real effort, and the result
 turned out not to need a task runner at all. It is just as useful in a
 script or a test, so it lives in its own package now:
-**[toolroom](https://willemkokke.github.io/toolroom/)**, unchanged in what
+**[toolroom](https://livery.willem.net/packages/toolroom/)**, unchanged in what
 it does, depending on nothing, least of all footman.
 
 Use them together. footman never imports or names toolroom, and toolroom
@@ -14,9 +14,9 @@ the run and routes through `run()` on its own, so it earns a receipt,
 obeys `--dry-run`, and shows up in `recording()` without opting in. That
 is the whole seam, and it is why this page can describe `run()` and leave
 the handles to
-[toolroom's own docs](https://willemkokke.github.io/toolroom/). The seam
+[toolroom's own docs](https://livery.willem.net/packages/toolroom/). The seam
 has a testing half too: where `recording()` captures bridge calls,
-[`toolroom.testing.answers()`](https://willemkokke.github.io/toolroom/testing/)
+[`toolroom.testing.answers()`](https://livery.willem.net/packages/toolroom/testing/)
 *answers* them — canned output and injected failures, footman present or
 not — see [Testing](testing.md).
 
@@ -35,7 +35,7 @@ you a typed `git` you call as `git.commit(…)`, and a tool nobody has heard
 of imports just the same and runs as a subprocess. This page covers `run()` and
 the task context; the handles — flag translation, disabling flags,
 in-process execution, and why nothing is transcribed per tool — are
-[toolroom's story](https://willemkokke.github.io/toolroom/usage/).
+[toolroom's story](https://livery.willem.net/packages/toolroom/usage/).
 
 ## `run()`
 

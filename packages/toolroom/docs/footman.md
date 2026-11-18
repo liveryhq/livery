@@ -4,7 +4,7 @@ icon: lucide/concierge-bell
 
 # With footman
 
-toolroom and [footman](https://willemkokke.github.io/footman/) are two
+toolroom and [footman](https://livery.willem.net/packages/footman/) are two
 zero-dependency packages that make each other better without either
 requiring the other. footman never imports, ships, or names toolroom;
 toolroom names footman only inside its seam, and only touches it when

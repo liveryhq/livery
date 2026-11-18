@@ -12,7 +12,7 @@ title: The design, in plain words
     discussions checks the implementation against this page, not the
     other way around. So if any argument here fails to convince you, that
     is a finding, not a nuisance: [open an
-    issue](https://github.com/willemkokke/footman/issues) or reply
+    issue](https://github.com/liveryhq/livery/issues) or reply
     wherever you were handed this link. It was written to be argued with.
 
 Every tool earns trust in its own way. A test suite earns it by failing

@@ -3,8 +3,9 @@
 How footman stacks up against the Python task runners I measured it against,
 on the same seven-task surface (`lint`, `format`, `typecheck`, `test`, `check`,
 `dist build`, `dist clean`) written five ways. The runnable head-to-head lives in
-the repo's [`comparison/`](https://github.com/willemkokke/footman/tree/main/comparison)
-directory; reproduce the numbers with
+the archived footman repository's
+[`comparison/`](https://github.com/willemkokke/footman/tree/main/comparison)
+directory; reproduce the numbers there with
 `uv run --group comparison python comparison/bench_compare.py`. Switching from
 one of these runners? The practical guides live on [Migrating](migrating.md).
 
@@ -15,7 +16,7 @@ Measured on duty 1.9.0, invoke 3.0.3, poethepoet 0.48.0, typer 0.27.0, CPython
 
     Every number and checkmark here was checked against the tools themselves,
     on the same seven tasks. If any of it is wrong or has become unfair to a
-    tool, [open an issue](https://github.com/willemkokke/footman/issues) and
+    tool, [open an issue](https://github.com/liveryhq/livery/issues) and
     it will be fixed.
 
 ## Why not make, just, or task?
@@ -52,7 +53,7 @@ wrapping a command-line utility is generic, and the type hints are a layer
 generated on top. So the code reads the same whether or not a stub has heard
 of your tool: `toolroom.terraform("plan")` runs exactly like
 `toolroom.ruff.check()`, and a stub only decides whether your editor can
-help. The handles live in [toolroom](https://willemkokke.github.io/toolroom/),
+help. The handles live in [toolroom](https://livery.willem.net/packages/toolroom/),
 footman's companion package, and detect the footman host on every call.
 
 ## Completion latency

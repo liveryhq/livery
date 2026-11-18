@@ -23,7 +23,7 @@ and *any* executable works without being declared here:
 
 toolroom stands alone: with nothing else installed, a call spawns the
 tool with plain `subprocess` and answers in `Result`; a failure raises
-`ToolError` unless `nofail`. When [footman](https://willemkokke.github.io/footman/)
+`ToolError` unless `nofail`. When [footman](https://livery.willem.net/packages/footman/)
 is present in the process, the same call routes through footman's
 `run()` instead and inherits everything a task run means — capture,
 replay-on-failure, dry-run, `recording()`, `--json` receipts — without

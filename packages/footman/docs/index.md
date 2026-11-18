@@ -6,7 +6,7 @@ title: A typed task runner with instant completion
 
 [![PyPI version](https://img.shields.io/pypi/v/footman?label=PyPI&color=blue)](https://pypi.org/project/footman/)
 [![Python versions](https://img.shields.io/pypi/pyversions/footman)](https://pypi.org/project/footman/)
-[![License](https://img.shields.io/pypi/l/footman)](https://github.com/willemkokke/footman/blob/main/LICENSE)
+[![License](https://img.shields.io/pypi/l/footman)](https://github.com/liveryhq/livery/blob/main/packages/footman/LICENSE)
 [![Docs built with Zensical](https://img.shields.io/badge/docs-Zensical-4051b5)](https://zensical.org)
 
 A task runner with the soul of [duty](https://pawamoy.github.io/duty/) and the
@@ -151,7 +151,7 @@ Head to [Getting started](getting-started.md) to go deeper.
 
 Tasks mostly run other programs, and `run("ruff check src --fix")` is a
 string your editor cannot help you with.
-[toolroom](https://willemkokke.github.io/toolroom/) makes those calls
+[toolroom](https://livery.willem.net/packages/toolroom/) makes those calls
 Python:
 
 ```python
