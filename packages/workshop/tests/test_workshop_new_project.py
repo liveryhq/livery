@@ -114,10 +114,10 @@ def test_a_birth_test_that_reaches_the_network_refuses_naming_the_host() -> None
 
     with (
         pytest.raises(
-            AssertionError, match=r"reached the network: .*docs\.willem\.net"
+            AssertionError, match=r"reached the network: .*livery\.willem\.net"
         ),
         fetch_url(
-            "https://docs.willem.net/livery/tools/pointer.json",
+            "https://livery.willem.net/tools/pointer.json",
             connect_timeout=5,
             transfer_timeout=5,
         ),

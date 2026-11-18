@@ -70,8 +70,9 @@ enabled = true
 enabled = true
 
 [docs]
-# The site's home; the account-level domain serves every project.
-site-url = "https://docs.willem.net/livery/"
+# The site's home: the repository's own Pages domain, set in its Pages
+# settings and pointed at liveryhq.github.io.
+site-url = "https://livery.willem.net/"
 description = "The livery ecosystem: one forge interface and the workshop that runs every project on it."
 
 [forge]

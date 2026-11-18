@@ -793,7 +793,7 @@ def test_this_workspaces_handler_reads_the_documented_members_and_toolrooms_stub
             ],
             "inventories": [
                 _PYTHON_INVENTORY,
-                "https://docs.willem.net/livery/objects.inv",
+                "https://livery.willem.net/objects.inv",
             ],
             "options": _HANDLER_OPTIONS,
         }
