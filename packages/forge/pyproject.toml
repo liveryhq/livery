@@ -48,7 +48,7 @@ test = [
 "livery.forge" = "livery.forge._dev_tools:TOOLS"
 
 [project.urls]
-Repository = "https://github.com/willemkokke/livery"
+Repository = "https://github.com/liveryhq/livery"
 
 [tool.uv.build-backend]
 # The importable package is livery.forge, its entry module the root's

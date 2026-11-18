@@ -63,7 +63,7 @@ test = [
 ]
 
 [project.urls]
-Repository = "https://github.com/willemkokke/livery"
+Repository = "https://github.com/liveryhq/livery"
 
 [project.scripts]
 footman = "livery.footman:main"

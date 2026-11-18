@@ -23,7 +23,7 @@ terraform.
 
 > **Beta.** toolroom is pre-1.0: minor versions may include breaking
 > changes — always called out in the
-> [changelog](https://github.com/willemkokke/livery/blob/main/packages/toolroom/CHANGELOG.md),
+> [changelog](https://github.com/liveryhq/livery/blob/main/packages/toolroom/CHANGELOG.md),
 > never in a patch release. Pin the minor if you build on it.
 
 ## No transcription

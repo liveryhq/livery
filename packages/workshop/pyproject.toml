@@ -99,7 +99,7 @@ livery-workshop-console = "livery.workshop._pytest_console"
 livery-workshop-layout = "livery.workshop._pytest_layout"
 
 [project.urls]
-Repository = "https://github.com/willemkokke/livery"
+Repository = "https://github.com/liveryhq/livery"
 
 [tool.uv.build-backend]
 # The wheel ships the base alone: livery.workshop, whose entry module is

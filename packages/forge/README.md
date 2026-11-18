@@ -10,4 +10,4 @@ secrets on GitHub.
 
 Runtime dependencies: the Python standard library, nothing else.
 
-Part of the [livery monorepo](https://github.com/willemkokke/livery).
+Part of the [livery monorepo](https://github.com/liveryhq/livery).

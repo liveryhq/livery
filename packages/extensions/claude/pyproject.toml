@@ -32,7 +32,7 @@ dependencies = [
 test = ["livery-extensions-python>=0.0.0"]
 
 [project.urls]
-Repository = "https://github.com/willemkokke/livery"
+Repository = "https://github.com/liveryhq/livery"
 
 # The hook verbs (`fm hooks.*`), which the extension's plugin mounts
 # while a workspace lists it.

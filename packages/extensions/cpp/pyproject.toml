@@ -29,7 +29,7 @@ dependencies = [
 test = ["livery-footman>=0.61.0"]
 
 [project.urls]
-Repository = "https://github.com/willemkokke/livery"
+Repository = "https://github.com/liveryhq/livery"
 
 # The name a package lists in its extensions, and the package whose
 # extension.toml the workshop mounts it from. Nothing else: the

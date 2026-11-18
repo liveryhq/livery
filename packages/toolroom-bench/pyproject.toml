@@ -51,7 +51,7 @@ test = [
 "livery.toolroom.bench" = "livery.toolroom.bench:tasks"
 
 [project.urls]
-Repository = "https://github.com/willemkokke/livery"
+Repository = "https://github.com/liveryhq/livery"
 
 [tool.uv.build-backend]
 # The importable package is livery.toolroom.bench, its entry module the

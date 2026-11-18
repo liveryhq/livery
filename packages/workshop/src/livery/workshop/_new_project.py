@@ -39,7 +39,7 @@ _PUBLIC_HOSTS = {"github": "https://github.com", "gitlab": "https://gitlab.com"}
 #: The catalogue a newborn resolves its tools against: this extension's own
 #: published index, a strongroom store served as static files under the
 #: site the extension publishes. Hardcoded, and it moves when the site does.
-PUBLISHED_INDEX = "https://docs.willem.net/livery/tools/"
+PUBLISHED_INDEX = "https://livery.willem.net/tools/"
 
 
 def _sync_tools(root: Path) -> None:

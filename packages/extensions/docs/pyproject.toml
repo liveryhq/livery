@@ -39,7 +39,7 @@ test = [
 ]
 
 [project.urls]
-Repository = "https://github.com/willemkokke/livery"
+Repository = "https://github.com/liveryhq/livery"
 
 # The site's verbs (`fm docs.*`) and the hook that links task names to
 # their pages, which the extension's plugin mounts while a workspace
