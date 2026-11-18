@@ -618,7 +618,7 @@ def test_the_newest_changelog_entries_carry_no_relative_links():
     assert not relative, (
         f"the newest changelog entries link relatively to {relative} — these "
         f"break the generated latest-changes page, which is validated on its "
-        f"own. Use https://willemkokke.github.io/footman/<page>/#<anchor>."
+        f"own. Use https://livery.willem.net/packages/footman/<page>/#<anchor>."
     )
 
 

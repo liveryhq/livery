@@ -3,7 +3,7 @@
 ## Reporting
 
 Report a vulnerability privately through GitHub:
-[Security → Report a vulnerability](https://github.com/willemkokke/footman/security/advisories/new).
+[Security → Report a vulnerability](https://github.com/liveryhq/livery/security/advisories/new).
 Please don't open a public issue for one.
 
 You'll get an acknowledgement within a few days. footman is maintained by
@@ -24,7 +24,7 @@ vulnerabilities:
   a `tasks.py` you don't trust is the same act as running a `Makefile` or a
   `setup.py` you don't trust.
 - Task discovery finding a `tasks.py` in a directory you moved into. The
-  [monorepo cascade](https://willemkokke.github.io/footman/monorepos/) walks
+  [monorepo cascade](https://livery.willem.net/packages/footman/monorepos/) walks
   from the repo root down to where you stand — that is documented behaviour,
   and it is why footman won't cascade past a project boundary.
 - A task passing your arguments to a program that then does something
@@ -34,7 +34,7 @@ vulnerabilities:
   stale, spawn a subprocess that imports the same `tasks.py` a run would.
   That is the documented design, not a hole: importing a repo's task files
   is the same risk posture as opening any other code file in that repo, and
-  a [dynamic completer](https://willemkokke.github.io/footman/completion/#dynamic-completions-are-recomputed-fresh)
+  a [dynamic completer](https://livery.willem.net/packages/footman/completion/#dynamic-completions-are-recomputed-fresh)
   already runs your function on the execution path. The process that answers
   the keystroke stays stdlib-only and imports nothing; what it spawns runs
   code you already trusted enough to check out.

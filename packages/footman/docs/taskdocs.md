@@ -81,9 +81,8 @@ wrote 20 pages under docs/tasks
 
 One file per task, an `index.md` per group with relative links, directories
 mirroring your group tree: drop it into your docs source and put the index
-in your nav. This site's **Task reference** section is exactly that, wired
-into [`zensical.toml`](https://github.com/willemkokke/footman/blob/main/zensical.toml)'s
-nav. `site` defaults to `--flavor=material` because a docs site is where it
+in your nav. This site's **Task reference** section is exactly that, placed
+in the site's nav. `site` defaults to `--flavor=material` because a docs site is where it
 lands; pass `--flavor=plain` for anything else.
 
 ## The runner itself: `fm docs.globals`

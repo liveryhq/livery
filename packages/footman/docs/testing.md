@@ -113,7 +113,7 @@ result = fm.invoke("release 1.2.0", answers={"git describe": "v1.1.0\n"})
 assert result.ok
 ```
 
-toolroom's [`answers()`](https://willemkokke.github.io/toolroom/testing/)
+toolroom's [`answers()`](https://livery.willem.net/packages/toolroom/testing/)
 is the same table applied one layer down, at the bridge's own seam — the
 door to use when the code under test holds no footman at all, or when
 the assertion is about how a *handle* rendered its call. Nested inside a

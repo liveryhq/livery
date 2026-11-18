@@ -26,7 +26,7 @@ a Python handle — including tools no stub has ever described.
 
 Most task runners exist, in the end, to call other command-line
 applications. Whatever else a `check` task does, it eventually shells out
-to ruff, to pytest, to git. So when [footman](https://willemkokke.github.io/footman/)
+to ruff, to pytest, to git. So when [footman](https://livery.willem.net/packages/footman/)
 was built, a lot of the effort went into making that one act ergonomic:
 calling a tool with real keyword arguments, having the flags translate
 mechanically instead of being transcribed by hand, and having a wrong
@@ -64,7 +64,7 @@ With nothing else installed, a call spawns the tool with plain
 subclass, carrying the captured streams. A failure raises `ToolError`
 unless the call opted into `nofail`.
 
-When [footman](https://willemkokke.github.io/footman/) is present in
+When [footman](https://livery.willem.net/packages/footman/) is present in
 the process, the same call routes through footman's `run()` instead
 and inherits everything a task run means: capture, replay-on-failure,
 dry-run, `recording()`, `--json` receipts, parallel lanes. Neither

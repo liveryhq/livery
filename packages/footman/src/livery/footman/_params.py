@@ -286,7 +286,7 @@ parameter for many), and must trail every required positional.
 makes an option you pass by name. `Arg` says "keep me a positional even
 though I have a default", which is why it needs the greedy-but-capped
 grammar above. The rules it is bending are laid out in the
-[typing guide](https://footman.willem.net/typing/)."""
+[typing guide](https://livery.willem.net/packages/footman/typing/)."""
 
 
 Forward = Annotated[_T, forward]

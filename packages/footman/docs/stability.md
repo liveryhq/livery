@@ -76,5 +76,5 @@ several releases. But the version number moves when the second condition is
 met, not when I would like it to be.
 
 If you are building on footman and something here is not covered that you
-need covered, [say so](https://github.com/willemkokke/footman/issues) —
+need covered, [say so](https://github.com/liveryhq/livery/issues) —
 that is exactly the feedback the second condition is asking for.

@@ -26,7 +26,7 @@ Chaining (`duty format lint test` → `fm format lint test`) and `--flags` carry
 over. You gain eager choice/type validation (duty happily accepts an invalid
 `Literal`; footman stops it), native nested groups, and instant completion.
 duty's big `tools` library maps to
-[toolroom](https://willemkokke.github.io/toolroom/): `from livery.toolroom.tools import
+[toolroom](https://livery.willem.net/packages/toolroom/): `from livery.toolroom.tools import
 ruff` gives the same kind of typed wrapper, and a tool duty never heard of
 imports just the same. Flag syntax note: duty also takes `lint fix=true`;
 footman uses `--fix`.

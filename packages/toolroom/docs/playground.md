@@ -9,7 +9,7 @@ hide:
 
 The tool room, live in your browser. The editor below is a `tasks.py`
 whose tool calls all go through toolroom's typed handles; the prompt is
-`fm` — [footman](https://willemkokke.github.io/footman/), toolroom's
+`fm` — [footman](https://livery.willem.net/packages/footman/), toolroom's
 host, which the handles detect and route through on every call. Python
 (and both packages) load into the page via
 [Pyodide](https://pyodide.org) on first use — nothing is installed on

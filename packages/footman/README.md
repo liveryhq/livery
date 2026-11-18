@@ -15,11 +15,11 @@ stdlib TOML reading — that floor is what buys the zero).
 
 > **Beta.** footman is pre-1.0: the surface is settling, but minor versions
 > may still include breaking changes — always called out in the
-> [changelog](https://github.com/willemkokke/footman/blob/main/CHANGELOG.md),
+> [changelog](https://livery.willem.net/packages/footman/changelog/),
 > never in a patch release. Pin the minor
 > (`livery-footman~=<minor>.0`) if you build on it. What is covered, what is internal,
 > and what has to be true before 1.0 are written down in the
-> [stability promise](https://willemkokke.github.io/footman/stability/).
+> [stability promise](https://livery.willem.net/packages/footman/stability/).
 
 ## Why
 
@@ -34,8 +34,8 @@ first failure, runnable command groups and parameter forwarding that make
 composite commands like `fm lint` and `check` real commands, a monorepo task
 cascade that merges a `tasks.py` per directory, and a first-party story for
 testing your tasks. The receipts live
-in the [comparison](https://willemkokke.github.io/footman/comparison/) —
-every number reproducible from
+in the [comparison](https://livery.willem.net/packages/footman/comparison/) —
+every number reproducible from the archived footman repository's
 [`comparison/`](https://github.com/willemkokke/footman/tree/main/comparison).
 
 ## Taste
@@ -95,7 +95,7 @@ $ fm --install-completion               # detects your shell; TAB answers from t
 ```
 
 > That `from livery.toolroom.tools import …` is optional.
-> [toolroom](https://willemkokke.github.io/toolroom/) makes command-line
+> [toolroom](https://livery.willem.net/packages/toolroom/) makes command-line
 > calls Python: it wraps **any** program, not a fixed list, with keyword
 > arguments becoming flags — `toolroom.terraform("plan")` runs whether or
 > not toolroom has heard of terraform. For common tools it also ships type
@@ -143,18 +143,18 @@ file runs on the project's dependencies — portable and at home.
 
 ## Learn more
 
-**[Documentation](https://willemkokke.github.io/footman/)** — start with
-[Getting started](https://willemkokke.github.io/footman/getting-started/),
+**[Documentation](https://livery.willem.net/packages/footman/)** — start with
+[Getting started](https://livery.willem.net/packages/footman/getting-started/),
 then the good parts:
-[typed signatures](https://willemkokke.github.io/footman/typing/) ·
-[chaining & parallelism](https://willemkokke.github.io/footman/orchestration/) ·
-[monorepos](https://willemkokke.github.io/footman/monorepos/) ·
-[composing tasks](https://willemkokke.github.io/footman/composing/) ·
-[running tools](https://willemkokke.github.io/footman/tools/) ·
-[testing your tasks](https://willemkokke.github.io/footman/testing/) ·
-[completion](https://willemkokke.github.io/footman/completion/) ·
-[CI & automation](https://willemkokke.github.io/footman/ci/) ·
-[comparison with duty / invoke / poe / typer](https://willemkokke.github.io/footman/comparison/)
+[typed signatures](https://livery.willem.net/packages/footman/typing/) ·
+[chaining & parallelism](https://livery.willem.net/packages/footman/orchestration/) ·
+[monorepos](https://livery.willem.net/packages/footman/monorepos/) ·
+[composing tasks](https://livery.willem.net/packages/footman/composing/) ·
+[running tools](https://livery.willem.net/packages/footman/tools/) ·
+[testing your tasks](https://livery.willem.net/packages/footman/testing/) ·
+[completion](https://livery.willem.net/packages/footman/completion/) ·
+[CI & automation](https://livery.willem.net/packages/footman/ci/) ·
+[comparison with duty / invoke / poe / typer](https://livery.willem.net/packages/footman/comparison/)
 
 MIT licensed. The road to 1.0 lives in
-[ROADMAP.md](https://github.com/willemkokke/footman/blob/main/ROADMAP.md).
+[ROADMAP.md](https://github.com/liveryhq/livery/blob/main/packages/footman/ROADMAP.md).

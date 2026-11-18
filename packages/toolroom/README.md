@@ -47,7 +47,7 @@ Attribute access chains subcommands
 through verbatim. The typed stubs *suggest* — your editor knows the
 flags and what each one does — but they never forbid: the hints decide
 whether your editor can help, never whether a call works.
-[Using the tools](https://willemkokke.github.io/toolroom/usage/) has the
+[Using the tools](https://livery.willem.net/packages/toolroom/usage/) has the
 full grammar.
 
 ## Standalone, or hosted
@@ -57,13 +57,13 @@ With nothing else installed, a call spawns the tool with plain
 subclass, carrying the captured streams. A failure raises `ToolError`
 unless the call opted into `nofail`.
 
-When [footman](https://willemkokke.github.io/footman/) is present in the
+When [footman](https://livery.willem.net/packages/footman/) is present in the
 process, the same call routes through footman's `run()` instead and
 inherits everything a task run means: capture, replay-on-failure,
 dry-run, `recording()`, `--json` receipts, parallel lanes. Neither
 package imports or depends on the other — they were designed together
 and are better together, but each is useful with the other absent.
-[With footman](https://willemkokke.github.io/toolroom/footman/) tells
+[With footman](https://livery.willem.net/packages/toolroom/footman/) tells
 that story.
 
 ## Built, not run
@@ -93,7 +93,7 @@ with answers({("git", "push"): 1}) as calls:
 assert calls[0].argv == ["git", "push"]
 ```
 
-[Testing](https://willemkokke.github.io/toolroom/testing/) has the whole
+[Testing](https://livery.willem.net/packages/toolroom/testing/) has the whole
 story.
 
 ## Install
@@ -104,5 +104,5 @@ uv add toolroom        # or: pip install toolroom
 
 toolroom has **zero runtime dependencies** and needs Python 3.11+. The
 docs live at
-[willemkokke.github.io/toolroom](https://willemkokke.github.io/toolroom/).
+[livery.willem.net/packages/toolroom](https://livery.willem.net/packages/toolroom/).
 MIT licensed.

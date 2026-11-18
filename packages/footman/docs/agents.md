@@ -8,9 +8,9 @@ a paste-ready instructions snippet, and agent hooks that keep an agent's
 work formatted, linted, and gated.
 
 An agent-readable index of this whole site lives at
-[`llms.txt`](https://willemkokke.github.io/footman/llms.txt) (and the full
+[`llms.txt`](https://livery.willem.net/llms.txt) (and the full
 text at
-[`llms-full.txt`](https://willemkokke.github.io/footman/llms-full.txt)).
+[`llms-full.txt`](https://livery.willem.net/llms-full.txt)).
 
 ## The snippet
 
