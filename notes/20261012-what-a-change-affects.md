@@ -652,6 +652,11 @@ Acceptance:
   an option (open 8), not part of the plan. They are measured once the
   closure check exists, since what they save depends on its cost and
   on decisions not yet taken.
+- 2026-11-21, Willem, on open 5: the merge queue's candidates select
+  through this engine, per test file once phase 11 switches it on,
+  together with pull requests. Each candidate measures from the
+  candidate ahead of it, so an entry pays for its own change
+  (`notes/20261009-merge-queue-plan.md`).
 
 ## Open
 
@@ -666,8 +671,8 @@ Acceptance:
 4. The window under `shadow` before `on`, counted in nights since the
    auditor runs on the nightly: proposal, 14 audited nightlies holding
    at least 30 merges, whichever is later. Willem.
-5. The merge queue: if its note is written, do batches select through
-   this engine from the start. Willem.
+5. Closed on 2026-11-21: the merge queue's candidates select through
+   this engine (decision record).
 6. How much of `[tests] reads` the extensions derive from the
    categories before a package writes any. The agent, at phase 6.
 7. The audit hook on the Windows leg: whether the `.pth` path meters
