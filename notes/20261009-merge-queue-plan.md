@@ -78,12 +78,15 @@ humain-scanner, a sibling repository, ran a manual merge train from
 squashed approved pull requests one by one onto
 `chore/merge-train-N`, ran one full gate on that tree, fast-forwarded
 the base to it, and closed each pull request with a comment naming its
-commit. A red train was closed and rebuilt from the base without the
-failing pull request. Its scripts are outside that repository, in
-`/Users/willem/humain-orchestrator/train-tools/`. Three of its rules
+commit. One gate covered the whole train, so a red train named no pull
+request: it was closed and rebuilt from the base without the pull
+request its failing tests pointed at, chosen by the orchestrator. Its
+scripts are outside that repository, in
+`/Users/willem/humain-orchestrator/train-tools/`. Two of its rules
 carry over: the queue records each entry's head and a moved head voids
-the entry; a red entry is dropped, never bisected; landing and
-pushing the next candidate are separate steps.
+the entry; landing and pushing the next candidate are separate steps.
+Its red rule does not carry over as written: with every candidate run,
+the red candidate names its entry and no choice or search is needed.
 
 ## Ground-truth contracts (do not violate)
 
@@ -234,6 +237,13 @@ before a squash (GitLab's fast-forward method), the advance step calls
 
 ### Red
 
+Candidate k is candidate k-1 plus entry k. When k-1 is green and k is
+red, entry k is the only change added to a green tree, so the run
+names the entry and no search is needed. This holds for a failure that
+needs an entry ahead of k too: the tree without k was green, so k is
+the entry to drop, and its own pull request run, started when it
+leaves, says whether the failure is the change's alone.
+
 A red candidate's entry leaves the queue: the label is removed, the
 verdict is commented on the pull request, and the candidates behind
 are rebuilt from the last green one. A rebuild that conflicts drops
@@ -260,8 +270,14 @@ the queue the only way into main, and the forge's own queue page.
 A workspace may declare that only the last candidate of a group runs,
 for a group of up to N entries. One run then proves N entries; the
 intermediate commits on main are covered as a group and their rows say
-so, and a red group runs its entries one at a time. It is off by
-default. A forge whose native queue cannot do it refuses it by name at
+so. A red group names no entry, so it runs every candidate of the
+group in parallel, the baseline mode, each selecting only its own
+change from the candidate ahead. That takes one round of wall time and
+finds every red entry of the group at once. A bisect takes log2(N)
+rounds one after another and a further search for each further red
+entry, so it pays only for groups large enough that N runs cost more
+than those rounds (open item 9). Batching is off by default. A forge
+whose native queue cannot do it refuses it by name at
 `fm workflow.configure`.
 
 ### What it costs and does not cover
@@ -391,14 +407,16 @@ organization.
 ### Phase 5: batching
 
 Deliverables: `[ci] queue-group = N` in `workshop.toml`, the group's
-row naming its entries, the one-at-a-time rerun of a red group, and
-the refusal on a forge whose queue cannot batch. A loop scenario
-`queue-group`.
+row naming its entries, the parallel run of every candidate of a red
+group, and the refusal on a forge whose queue cannot batch. A loop
+scenario `queue-group`, with a red group of three whose second entry
+fails.
 
 **Acceptance**
 
-- `fm ci.e2e --scenario=queue-group` passes with one run for a group
-  of three.
+- `fm ci.e2e --scenario=queue-group` passes with one run for a green
+  group of three, and for the red group one round of three candidate
+  runs that drops the second entry and lands the other two.
 - `fm check` green.
 
 ## Temporary, replaced by
@@ -466,6 +484,12 @@ the refusal on a forge whose queue cannot batch. A loop scenario
   affected plan's selection lands, which answers that plan's open
   item 5 with yes. Instead of asking: candidate k measures from
   candidate k-1, so every entry pays the single-change rate.
+- 2026-11-21, Willem asked why a red entry is never bisected. With
+  every candidate run, the red candidate names its entry, so no search
+  is needed; the note's "never bisected" came from humain-scanner,
+  where one gate covered a whole train. A red batched group runs every
+  candidate of the group in parallel, replacing one at a time, and a
+  bisect for large groups is open item 9.
 
 ## Open
 
@@ -491,3 +515,6 @@ the refusal on a forge whose queue cannot batch. A loop scenario
 8. Agent, phase 4: GitLab Premium's merge trains as the same
    capability, tested as a decline on gitlab-ce until a Premium
    instance gives a cassette.
+9. Agent, phase 5: the group size above which a red group is bisected
+   instead of run as every candidate in parallel, from the runner
+   minutes and the wall time each costs; none below it.
