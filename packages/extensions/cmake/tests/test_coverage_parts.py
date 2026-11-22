@@ -298,6 +298,14 @@ needs_llvm = pytest.mark.skipif(
     not _clang_tools(), reason="this host has no clang++, llvm-profdata and llvm-cov"
 )
 
+#: Microsoft's C++ standard library refuses a clang older than the one it
+#: was released beside (error STL1000), and a hosted Windows image can
+#: hold such a pair. This is the library's own switch for building with
+#: the pair anyway; it changes nothing where the two match.
+_STL_ACCEPTS_AN_OLDER_CLANG = (
+    ["-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH"] if sys.platform == "win32" else []
+)
+
 
 @needs_llvm
 def test_a_fresh_llvm_profile_s_line_counts_equal_its_lcov_export(
@@ -315,6 +323,7 @@ def test_a_fresh_llvm_profile_s_line_counts_equal_its_lcov_export(
             "-O0",
             "-fprofile-instr-generate",
             "-fcoverage-mapping",
+            *_STL_ACCEPTS_AN_OLDER_CLANG,
             str(source),
             "-o",
             str(program),
