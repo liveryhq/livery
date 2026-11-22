@@ -114,9 +114,14 @@ All on 2026-11-22. The review note has the methods and their limits.
 | Suite selected per Python-only commit, package grain as today | 42.9% of test functions, 56.3% of CI seconds |
 | The same, from a recorded footprint | 15.9% mean and 9.9% median; 24.6% of CI seconds |
 | The same, a sound static closure after about 20 edits | 34% to 43% |
-| One pytest process per test file against one session, on a Mac | 199.2 s against 195.3 s, plus 2.8% for the recording hook |
+| One pytest process per test file against one session, on a Mac desk | 199.2 s against 195.3 s, plus 2.8% for the recording hook |
+| The same on hosted runners, files started in list order | Windows +8.9%, ubuntu +20.7% and +24.9% |
+| The same, the longest file started first | Windows +2.9%, ubuntu +3.8% |
+| The same on a hosted macOS runner | Not resolved: +3.4% in one run, +13.4% in the next, in a job where the runner slowed by 33% |
+| The recording hook on top of a process per file, hosted runners | Windows +3.6%, ubuntu +1.6% and +4.5%, macOS +12.5% and +13.9% |
+| What one more pytest process costs | Median 1.06 s on Windows, 0.61 s on ubuntu, 0.52 s on macOS |
+| The hook on Windows | Loaded in 332 of 332 pytest processes. 439 of 502 Python children kept it. The three platforms recorded the same 667 modules |
 | Footprints that differ between two runs | 1 of 331, by one text read |
-| The same cost on a Windows runner | MEASUREMENT-PENDING |
 | Entries ahead of a merge when it queues | 0 for 65% to 75%, mean 0.3 to 0.5, max 8 |
 | A CI run that runs no leg | 5.9 min, about 20 runner-minutes |
 | Pull requests pushed again after their first run | 27 of 117 |
@@ -268,10 +273,28 @@ they listed, and the third-party distributions they imported. A hook
 loaded into every Python process does the recording, so a child that
 inherits the environment is recorded too.
 
-How the item is isolated is decided by the Windows measurement (open item
-4). Either each test file runs in a process of its own, or one session
-runs them and a plugin attributes reads by observing imports and fixtures.
-Restoring modules between files in one process is ruled out.
+Each test file runs in a pytest process of its own, as many at once as a
+session has workers. The extension starts the longest file first, by the
+durations the shards are balanced by, and a file with no duration yet
+before those. In list order the longest file starts near the end and runs
+alone after every other file is done: 169 s on the Windows runner. Started
+longest first, a process per file costs 2.9% on Windows and 3.8% on ubuntu
+against one session. One session with a plugin that observes imports and
+fixtures is not built: it keeps a value read once and held in memory out
+of the row. Restoring modules between files in one process is ruled out.
+
+The hook records an open that fails, too. 359 of the 2,169 paths recorded
+are of files that do not exist, the same 359 on the three platforms. The
+row keeps them as absent, so a file created at one makes the item run.
+
+A recorded path has one spelling on every platform: relative to the
+root, with forward slashes, in the case the disk has. On Windows the hook
+drops a `\\?\` prefix, compares without case, and takes a junction for
+a link.
+
+An item that collects no test at the run's trigger writes no row.
+`tests/test_editor_extensions.py` is one at every trigger but the
+scheduled run.
 
 What a recording must not count: the test runner's own search for its
 configuration, which opens every `pyproject.toml` above a test file. The
@@ -286,6 +309,7 @@ What a hook cannot see, and what covers each:
 | A check that a file exists; a file added to a listed directory | Listed directories are in the row. A path added or removed under one makes the item run |
 | The installed environment between the lock and an import | The hook records each imported distribution. A lock change that moves it, or anything it depends on, makes the item run |
 | A skipped test, another platform | A skip is its own verdict. Rows are per platform |
+| An environment variable the item reads. `test_workshop_currency.py` waits on an editor on Windows without `GIT_EDITOR`, which every task sets | Not in the row. The extension gives each item's process one named environment: open item 14 |
 
 ### Selection, and how it is kept honest
 
@@ -570,20 +594,27 @@ row. The union reads the tree's rows.
 
 ### Part C: test items
 
-Needs open items 4 and 5, and part B through B4.
+Needs open items 5 and 14, and part B through B4.
 
 **C1. The item.** The pytest extension names its items. The shard's
 `files` become `items` (#1820).
 
-**C2. The recording.** The hook, per item, in the form the Windows
-measurement decides. A row holds the reads.
+**C2. The recording.** A process per item, the longest started first,
+with the hook in every Python process. A row holds the reads.
 
 - `test_a_child_that_lost_the_hook_marks_its_item_unrecorded`, first.
+- `test_an_item_that_collects_no_test_writes_no_row`.
+- `test_an_open_of_a_missing_path_is_recorded_as_absent`.
+- `test_a_recorded_path_has_one_spelling_on_every_platform`, with a
+  drive letter in another case, a `\\?\` prefix and a junction.
+- `test_a_file_with_no_duration_starts_before_the_longest`.
 - `test_a_listed_directory_gaining_a_file_makes_the_item_run`.
 - `fm store.show proved --item packages/forge/tests/test_gitea_pulls.py`
   lists what it read.
-- The recording costs under 5% of a leg's wall on each platform, read
-  from `fm ci.timings`.
+- A process per item costs under 5% of a leg's wall against one session,
+  and the hook under 5% more, on each platform and with coverage on. Read
+  from `fm ci.timings` over 10 runs of each: one hosted macOS runner
+  slowed by 33% inside one job, so one run settles nothing there.
 
 **C3. Item rows in shadow.** Everything runs. The record says what would
 not have.
@@ -754,7 +785,6 @@ a person.
 | `submit` and `start` in the core while the queue is in the extension | F7 |
 | A task with write access loads the workspace | The CI manifest and the narrow mount, in the vocabulary record's plan |
 | The bot as a stored token on GitHub | An App, in the identities plan |
-| `MEASUREMENT-PENDING` in the table above | The Windows run of 2026-11-22 |
 
 ## Decision record
 
@@ -789,6 +819,12 @@ a person.
   footprint, and the static closure is not built. The footprint selects
   15.9% where a sound static closure ends at 34% to 43%, and recording
   costs 2% on a Mac.
+- 2026-11-22, mine, from the hosted runners: each test file runs in a
+  process of its own, the longest started first. That costs 2.9% on
+  Windows and 3.8% on ubuntu against one session, the hook loads in every
+  pytest process on Windows, and a Python child there inherits it. Does
+  not cover: macOS, which the hosted runner did not resolve, and coverage,
+  which was off. Both are C2's last acceptance line.
 - 2026-11-22, mine: one candidate at a time by default. Depth is 0 for
   most merges, and three macOS shards per run meet the runners' limit
   first.
@@ -808,10 +844,11 @@ a person.
 3. **The one spelling**: `inputs.categories` and `inputs.reads`. Willem,
    before B1. Does not cover: one kind of entry. There are two, each
    under its own name.
-4. **A process per item, or an observing plugin.** By the Windows
-   measurement. A process per item also ends tests that pass only after
-   another file ran. The plugin keeps a hole: a value read once and kept
-   in memory.
+4. **What a process per item costs on macOS, and with coverage on.**
+   The choice itself is made: see the decision record. A Mac desk
+   measured 2%. A hosted macOS runner gave 3.4% and 13.4%. Coverage adds
+   a start and a data file to every process and was not measured. Mine,
+   at C2, from `fm ci.timings`.
 5. **How many times a changed test file runs.** Proposal: 5, at once.
    Mine, at C5.
 6. **The extensions' names and split**: workflow, release, issues.
@@ -834,3 +871,9 @@ a person.
 13. **A request between sessions, a session's address, a series a
     person's session may write.** Their own design record, after part F.
     Willem.
+14. **The environment an item's process gets.** A row does not hold the
+    variables an item read. Proposal: the task's environment, with the
+    forge's run variables removed, so a row made at one trigger holds at
+    another. A test that needs a run sets the variables itself, as the
+    suite's tests do today. Mine, at C2. Does not cover: a variable a
+    person sets at a desk. A desk's rows are read by that desk alone.
