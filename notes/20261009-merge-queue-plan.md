@@ -107,10 +107,10 @@ the red candidate names its entry and no choice or search is needed.
    chain reaches a proved tree.
 6. **Nothing on the merge path waits on a person.** A queue step that
    cannot act prints why and exits; the next event runs it again.
-7. **Every queue verb is idempotent.** Re-running the advance step is
+7. **Every queue verb is idempotent.** Re-running `fm queue --update` is
    the recovery procedure, and a second run changes nothing.
 8. **No logic in YAML.** The events are emitted plumbing; the
-   decisions live in `fm submit`, the advance step and `fm ci.run`.
+   decisions live in `fm submit`, `fm queue --update` and `fm ci.run`.
 9. **The forge is spoken to through `livery.forge` alone**, and a
    feature a forge lacks is probed with `supports()`, never declined
    by a constant.
@@ -159,14 +159,42 @@ is batching, a setting described below.
    tree proved and runs no leg.
 6. Each candidate's run selects through `fm ci.run`.
 7. `livery.forge` answers whether a pull request landed the same way
-   on every backend. `fm status` prints the queue.
+   on every backend. `fm queue` prints the queue, and `fm status` one
+   line of it.
+
+### `fm queue` and `fm queue --update`
+
+`fm queue` reads the queue from the forge and the gate record and
+prints it: each entry's position, its candidate's state, and how far
+it is behind main. It writes nothing.
+
+`fm queue --update` brings the queue in line with the forge's state,
+then exits, as `fm check --fix` is the writing form of `fm check`. It
+keeps no state of its own; what it needs is on the forge (labels,
+heads, verdicts) or in the gate record. Each run:
+
+1. reads the entries labelled `queue:armed`, urgent ones first, then
+   by when the label was applied;
+2. voids an entry whose head moved or that became a draft;
+3. builds and pushes a `queue/` candidate for each entry whose
+   candidate is missing or stale, which starts its run;
+4. posts `gate` on each entry's head whose chain from main is green;
+5. lands those entries through the forge's squash merge, in order,
+   checking the tree after each merge;
+6. drops a red entry: removes its labels and comments its verdict;
+   the candidates behind it are rebuilt by the next run.
+
+CI runs it on every event that can change the queue: a push to main,
+a candidate run's verdict, a label or draft change, and a push to a
+queued pull request. A person runs it to unstick the queue; a second
+run changes nothing.
 
 ### Membership
 
 Membership is the label `queue:armed`. `fm submit --armed` applies it;
 the order is the time the label was applied, then the pull request
 number. On the workshop's queue, arming arms nothing on the forge: the
-advance step lands each entry in order, and a forge's own auto-merge
+`fm queue --update` lands each entry in order, and a forge's own auto-merge
 would land out of order, from a tree the queue did not build. On
 GitHub with the native queue, `--armed` also enters GitHub's queue.
 `fm submit.arm` adds the label and `fm submit.disarm` removes it, and
@@ -191,7 +219,7 @@ same on every forge.
 
 ### Candidates and their runs
 
-The advance step builds each candidate as a branch under `queue/`,
+`fm queue --update` builds each candidate as a branch under `queue/`,
 squashing each entry's change onto the one before it, and pushes it.
 A push to `queue/` starts the gate point's run on that candidate.
 
@@ -229,23 +257,23 @@ green, naming the candidate run that proved it.
 
 ### Landing
 
-When the chain to entry k is green, the advance step calls the
+When the chain to entry k is green, `fm queue --update` calls the
 forge's own squash merge for each entry up to k, in queue order, with
 the pull request's title as the subject. The gate record keys trees,
 so each merge's commit id differs from the candidate's and its tree
-does not: the advance step compares main's tree after each merge with
+does not: `fm queue --update` compares main's tree after each merge with
 the candidate's tree at that entry.
 
 - Equal: the push run finds the tree proved and runs no leg.
 - Different, or main moved by a merge around the queue: nothing is
   undone. The push run narrows and runs its legs, which is today's
-  behaviour, and the advance step rebuilds the candidates behind from
+  behaviour, and `fm queue --update` rebuilds the candidates behind from
   the new tip.
 
 The forge marks each pull request merged, makes and signs the commit,
 closes the issue the branch names and deletes the branch, as a merge
 does today. Where the forge needs the head brought onto the base
-before a squash (GitLab's fast-forward method), the advance step calls
+before a squash (GitLab's fast-forward method), `fm queue --update` calls
 `update_branch` first; the tree it yields is the candidate's.
 
 ### Red
@@ -285,10 +313,10 @@ own "jump to the front", where the API offers it (open item 7).
 ### Recovery: a merge around the queue
 
 The queue cannot land anything while no runner is available, or
-while the advance step or `fm ci.run` is broken; the fix for either
+while `fm queue --update` or `fm ci.run` is broken; the fix for either
 would have to land through the queue. For these cases a person merges
 the pull request around the queue, on purpose:
-`fm submit.merge --around-queue <number> --reason=<text>`.
+`fm submit.merge --bypass-queue <number> --reason=<text>`.
 
 - It merges through the forge's own squash merge, as a landing does,
   so the pull request reads merged and the forge signs.
@@ -297,7 +325,7 @@ the pull request around the queue, on purpose:
 - Main's push run gates the tree that landed. That tree was not
   proved before it landed, so the run narrows from the nearest proved
   tree and runs its legs, which is today's behaviour.
-- The next advance step finds main moved and rebuilds every candidate
+- The next `fm queue --update` finds main moved and rebuilds every candidate
   on the new tip.
 
 On GitHub with the native queue, the ruleset's bypass list names the
@@ -314,7 +342,7 @@ when a ruleset with a `merge_queue` rule targets the default branch;
 Gitea and GitLab CE answer false after the probe. With the capability,
 GitHub builds the candidates, starts their runs through the
 `merge_group` event and lands the entries; `fm ci.run` on that event
-selects and stamps as on a `queue/` push, and the advance step builds
+selects and stamps as on a `queue/` push, and `fm queue --update` builds
 nothing. What it adds over the workshop's queue: a ruleset that makes
 the queue the only way into main, and the forge's own queue page.
 
@@ -397,17 +425,17 @@ Deliverables:
 - `fm submit --armed` labels and prints the position, arming nothing
   on the forge; `fm submit.arm` and `fm submit.disarm` add and remove
   the label; `fm submit` opens a draft.
-- The advance step (open item 1 names it): builds the `queue/`
+- `fm queue --update`, as described under its heading: builds the `queue/`
   candidates, lands, drops red entries, rebuilds, and runs from the
   merge point, from a candidate run's verdict and from the pull
   request events.
 - `fm ci.run`: a candidate measures from the candidate ahead; a queued
   pull request's own run skips; the gate job posts `gate` on each head
   whose chain is green.
-- `fm status` prints the queue.
+- `fm queue` prints the queue; `fm status` prints one line of it.
 - `fm submit --urgent`, and the `queue:urgent` label declared through
   `RepoConfig.labels`.
-- `fm submit.merge --around-queue <number> --reason=<text>`, refusing
+- `fm submit.merge --bypass-queue <number> --reason=<text>`, refusing
   without a reason.
 - Docs: `packages/workshop/docs/development-patterns.md`, "What the
   forge does with several green pull requests" rewritten to the
@@ -417,9 +445,10 @@ Tests, refusals and fallbacks first: a lost update re-done, a lost
 label re-applied, a moved head voids its entry, a draft refused, a red
 candidate dropped and the ones behind rebuilt, a conflicting rebuild
 dropped, a tree mismatch falls back to the push run's legs, an empty
-queue, the advance step twice changes nothing, a recovery merge
-without a reason refused, a recovery merge followed by an advance
-step that rebuilds every candidate, an urgent entry queued behind
+queue, `fm queue --update` twice changes nothing, a recovery merge
+without a reason refused, a recovery merge followed by an
+`fm queue --update` that rebuilds every candidate, an urgent entry
+queued behind
 running candidates that rebuilds them on top of it; then the green
 path.
 
@@ -427,7 +456,7 @@ path.
 
 - With one pull request queued, `fm submit --armed` from a second
   branch prints `queued behind 1 pull request`.
-- The advance step run twice prints the same queue, and the second run
+- `fm queue --update` run twice prints the same queue, and the second run
   changes nothing on the forge.
 - `fm check` green.
 
@@ -454,7 +483,7 @@ Deliverables: the `merge_queue` capability and its probe;
 `RepoConfig.merge_queue`, declared by `[ci] merge-queue = true`, and
 governance writing the ruleset `workshop-merge-queue`, its bypass
 list naming the repository's admins; the gate point's `merge_group`
-event; `fm ci.run` on that event; the advance step building nothing
+event; `fm ci.run` on that event; `fm queue --update` building nothing
 where the capability is present; an urgent entry jumping the native
 queue where the API offers it. Conformance
 scenario `merge-queue` recorded on a scratch repository owned by an
@@ -570,11 +599,18 @@ fails.
   `--urgent` to match it. `mergeable` was set aside: it is the forges'
   word for "the forge can merge this now". Under the workshop's queue,
   `--armed` arms nothing on the forge.
+- 2026-11-22, Willem, closing open item 1: the step that brings the
+  queue in line is `fm queue --update`, beside a read-only `fm queue`,
+  as `fm check --fix` is beside `fm check`; the candidates' branch
+  prefix is `queue/`; the recovery merge is
+  `fm submit.merge --bypass-queue`. `--skip-queue` was set aside:
+  in British English, skipping the queue means going first, which is
+  what `--urgent` does, while the recovery merge lands a tree no run
+  proved first. "Bypass" is GitHub's word for the same act.
 
 ## Open
 
-1. Willem: the names: the advance step's verb, the branch prefix
-   `queue/`, and the spelling `--around-queue`.
+1. Closed on 2026-11-22: the names (decision record).
 2. Willem: the order against `notes/20261012-what-a-change-affects.md`.
    Recommendation: phases 1 to 3 here first on package-grain
    narrowing, since that plan's open items 1 to 4 are still unruled.
