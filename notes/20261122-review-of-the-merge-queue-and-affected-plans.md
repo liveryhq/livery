@@ -357,8 +357,10 @@ from "did not finish", and a stated answer for a flaky red.
    branch protection (`F/_gitlab.py:390`), against contract 4. The rebase
    API is asynchronous and changes the head, which voids the entry by the
    plan's own rule and orphans a posted status.
-5. **Drafts.** GitHub offers no drafts in private repositories on Free or
-   Pro. Gitea has no draft events. `is_armed` is read as "will this land"
+5. **Drafts.** GitHub has drafts in a private repository on the Free
+   plan. This item first said it had none there, from memory, and that
+   was wrong: a probe on 2026-11-22 opened a draft pull request in one,
+   marked it ready and made it a draft again. Gitea has no draft events. `is_armed` is read as "will this land"
    in the verdict classifier (`W/_verdict.py:615`, green and not armed
    exits 11), the follow, the workflow engine and `disarm_before_push`. The
    plan lists none of these readers. One question on `livery.forge`, "is
@@ -731,6 +733,95 @@ are cheap and narrow every selector.
 
 The script and its output are in the session's scratch directory and are
 not kept. The measurement is repeated by phase 5's own replay.
+
+**A2e. Measured on hosted runners: a process per test file costs 3% to 4%
+when the longest file starts first.** A fourth measurement the same day,
+on GitHub's hosted runners for ubuntu, macOS and Windows. One job on each
+ran all 332 test files, 7,773 tests, with as many processes at once as the
+session has workers: 4, and 3 on macOS. The passes ran back to back in one
+job: one session (A), a process per file in list order (B), the same with
+the hook (C), one session again (A2), and a process per file with the
+longest started first (B2). The table is the third push's run, the one
+where every pass is valid on Windows.
+
+| Wall, seconds | Windows | ubuntu | macOS |
+| --- | --- | --- | --- |
+| A, one session | 737.5 | 250.1 | 352.4 |
+| A2, one session again | 683.3 | 231.9 | 426.3 |
+| B, a process per file, list order | 773.7 | 291.0 | 441.4 |
+| C, B with the hook | 801.5 | 304.1 | 496.7 |
+| B2, a process per file, longest first | 730.8 | 250.3 | 480.3 |
+| B against the mean of A and A2 | +8.9% | +20.7% | +13.4% |
+| B2 against the mean of A and A2 | +2.9% | +3.8% | +23.4% |
+| C against B | +3.6% | +4.5% | +12.5% |
+| One more pytest process, median | 1.06 | 0.61 | 0.52 |
+| A bare interpreter, median | 0.046 | 0.018 | 0.024 |
+| pytest on a file with one test | 0.667 | 0.408 | 0.379 |
+
+- **The order of the files costs more than starting the processes.** In
+  list order `tests/test_workspace_provenance.py` starts near the end and
+  runs alone after every other file is done: 169 s on Windows, 74 s on
+  ubuntu. Started longest first, that time is gone.
+- **A session has start-up of its own.** On Windows the workers of pass A
+  spent 622 s outside any test, and the processes of pass B 466 s. On
+  ubuntu it is 302 s against 256 s, and on macOS 182 s against 212 s. So
+  on two of the three a process per file adds no process time. It loses
+  where one long file has nothing to run beside.
+- **macOS is not resolved.** The second push's run gave +3.4% for B. In
+  the run of the table the summed time of the tests alone rose from 876 s
+  in pass A to 1,164 s in the last pass, so the runner slowed by 33% while
+  the job ran, and every later pass reads worse than it is. The Mac desk
+  of A2d measured 2%.
+- **The hook works on Windows.** It loaded in 332 of 332 pytest
+  processes. Of 502 Python children, 439 kept it. The 63 that lost it are
+  in 12 test files that build the child's environment themselves, the
+  same 12 on every platform. Windows recorded the same 667 executed
+  modules as ubuntu and macOS.
+- **Paths needed work on Windows.** The hook compares through
+  `os.path.normcase`, drops a `\\?\` prefix, turns backslashes into
+  `/`, takes a junction for a link, and counts `os.spawn` and a direct
+  `_winapi.CreateProcess` as child starts. After that, of 2,169 recorded
+  paths none is absolute, none has another case than the disk, and none
+  resolves outside the root.
+- **359 recorded paths do not exist**, the same 359 on the three
+  platforms. The hook records an open before it fails. That is what a
+  row needs: a file created at one of them can change the verdict.
+
+What this run does not cover:
+
+- **Coverage was off.** It adds a start and a data file to every process,
+  so the cost of a process here is a lower bound.
+- **One runner ran every file.** A real macOS or Windows leg is one shard
+  of 3 or 4.
+- **No `fm` task started the processes**, so the task's environment was
+  absent apart from `GIT_EDITOR=true`, set by hand.
+- **Runner to runner the spread is large.** Pass A on ubuntu took 185.2 s
+  in one run and 250.1 s in the next. Only ratios inside one job are
+  compared, and the second A was 7% faster than the first on Windows and
+  ubuntu.
+
+Three anomalies the run met:
+
+- `packages/workshop/tests/test_workshop_currency.py` waits on an editor
+  on Windows when `GIT_EDITOR` is not set, and fails on ubuntu and macOS.
+  Every `fm` task sets it, so the gate does not see it. In the second
+  push's run pass A on Windows ended at the 60 minute limit for this
+  reason.
+- Two tests of `packages/workshop/tests/test_workshop_issue.py` fail on
+  Windows outside a task with "no bash shell available on this machine".
+- `tests/test_editor_extensions.py` collects no test at any point but the
+  nightly, so its own pytest process exits 5. A session hides that.
+
+**What this changes.** A process per item is chosen, and the observing
+plugin is not built. The single plan,
+`notes/20261122-proved-changes.md`, starts the longest file first, keeps
+an absent path in the row, gives a row no entry for an item that collects
+nothing, and has an open item for the environment an item's process gets.
+The cost on macOS and with coverage on is that plan's open item 4.
+
+The scripts, the hook as ported and each run's output are kept outside the
+repository, on Willem's computer. The plan's phase C2 builds the hook in
+the repository.
 
 **A3. Sources 3 and 5 select more than today's package grain, against
 contract 5.** No core package depends on an extension package. A change
@@ -1224,6 +1315,13 @@ step 3 depends on for the queue's identity.
   and an observing plugin: "fair!" On the receipt files written at every
   sync: "that should be fixed then". The fix is on the branch
   `fix/receipt-files-written-only-when-changed`.
+- 2026-11-22, on a repository whose plan has no branch protection: "I
+  don't think we should limit anything if branch protection is not
+  available. They'll just have to be warned." The probe that day, on a
+  private repository on GitHub's Free plan: reading branch protection and
+  reading rulesets both answer 403, "Upgrade to GitHub Pro or make this
+  repository public to enable this feature". A Free organization's
+  private repository was not probed.
 
 ## For Willem to rule
 
