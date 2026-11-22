@@ -295,12 +295,17 @@ comparison across forges runs. Acceptance: #811's.
    first: one secret, the shape the runbook already uses. Not covered:
    token expiry and rotation. (b) A GitHub App: short-lived tokens,
    per-repository grants, an attributable author; costs the App's
-   setup and a minting step in the verbs.
+   setup and a minting step in the verbs. Now part of
+   `notes/20261021-forge-identities.md`: the examples' bot is an App
+   installed on the fleet organisation, and the births hold the `org`
+   role, a machine user's token.
 3. **The scratch birth's job and token.** Owner: Willem. The e2e token
    creates and deletes in `livery-forge-e2e`, an organisation of its
    own, not this repository's admin token. Recommended: the nightly's
    own job holds it as the scratch birth's only token; no job holds it
-   beside this repository's admin token.
+   beside this repository's admin token. Now part of
+   `notes/20261021-forge-identities.md`, phase 10: the scratch birth
+   holds the `org` role alone.
 4. **The GitHub lane in the loop's vocabulary.** Owner: me. Whether
    `fm ci.e2e --forge=github` names the fleet verbs, so one command
    drives the three lanes, or the fleet keeps its own family. Decided

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -336,3 +337,60 @@ def test_receipts_merge_key_by_key_and_a_file_both_changed_reads_as_it_stands(
     (tmp_path / "b.toml").unlink()
     assert "b.toml" not in engine.merge_receipts(base, ours, theirs, beside=tmp_path)
     assert engine.receipt_of(tmp_path / "b.toml") is None
+
+
+# --- receipt files are written only when they change -----------------------------
+
+#: A modification time no write made during a test leaves behind.
+_LONG_AGO = 1_000_000_000 * 10**9
+
+
+def _aged(path: Path) -> Path:
+    """*path* with its modification time set to `_LONG_AGO`, so a write shows."""
+    os.utime(path, ns=(_LONG_AGO, _LONG_AGO))
+    return path
+
+
+def test_a_receipt_file_whose_receipts_changed_is_written(tmp_path: Path) -> None:
+    engine.write_rendered(tmp_path, {"a.toml": "a0"})
+    path = _aged(tmp_path / engine.RENDERED_MANIFEST)
+    engine.write_rendered(tmp_path, {"a.toml": "a1"})
+    assert engine.read_rendered(tmp_path) == {"a.toml": "a1"}
+    assert path.stat().st_mtime_ns != _LONG_AGO
+
+
+def test_a_receipt_file_with_no_receipts_left_is_removed(tmp_path: Path) -> None:
+    engine.write_rendered(tmp_path, {"a.toml": "a0"})
+    engine.write_rendered(tmp_path, {})
+    assert not (tmp_path / engine.RENDERED_MANIFEST).exists()
+
+
+def test_a_receipt_file_already_holding_its_receipts_is_left_alone(
+    tmp_path: Path,
+) -> None:
+    engine.write_rendered(tmp_path, {"b.toml": "b0", "a.toml": "a0"})
+    path = _aged(tmp_path / engine.RENDERED_MANIFEST)
+    engine.write_rendered(tmp_path, {"a.toml": "a0", "b.toml": "b0"})
+    assert path.stat().st_mtime_ns == _LONG_AGO
+
+
+def test_a_crlf_checkout_of_a_receipt_file_is_left_alone(tmp_path: Path) -> None:
+    """A Windows checkout's line endings are no change to the receipts."""
+    engine.write_rendered(tmp_path, {"a.toml": "a0"})
+    path = tmp_path / engine.RENDERED_MANIFEST
+    crlf = path.read_bytes().replace(b"\n", b"\r\n")
+    path.write_bytes(crlf)
+    engine.write_rendered(tmp_path, {"a.toml": "a0"})
+    assert path.read_bytes() == crlf
+
+
+def test_the_local_receipt_is_written_only_when_its_receipts_change(
+    tmp_path: Path,
+) -> None:
+    engine._write_local(tmp_path, {"a.toml": "a0"})  # pyright: ignore[reportPrivateUsage]
+    path = _aged(tmp_path / engine.LOCAL_RECEIPT)
+    engine._write_local(tmp_path, {"a.toml": "a0"})  # pyright: ignore[reportPrivateUsage]
+    assert path.stat().st_mtime_ns == _LONG_AGO
+    engine._write_local(tmp_path, {"a.toml": "a1"})  # pyright: ignore[reportPrivateUsage]
+    assert path.stat().st_mtime_ns != _LONG_AGO
+    assert json.loads(path.read_text("utf-8")) == {"a.toml": "a1"}
