@@ -122,6 +122,13 @@ the red candidate names its entry and no choice or search is needed.
     rebuild and an empty queue are tested before the green path,
     through fault modes on the fake and the loop's scenario.
 13. **The loop never runs from main.**
+14. **Every write to main is a queue landing or the recovery merge.**
+    A verb that would write main another way, such as a release cut
+    from a commit, goes through the queue instead. Read on
+    2026-11-21: no verb writes main today. The pushes go to feature
+    branches (`_submit.py`, `_sync.py`), the state store's refs
+    (`_traces.py`, through `livery.git`), and the loop's own
+    repository (`_e2e.py`).
 
 ## The design
 
@@ -254,6 +261,45 @@ A platform-only failure in entry k voids the runs of every candidate
 behind it, since each contains k. The local gate before `fm submit`
 covers one platform. Open item 5 measures how often this happens.
 
+### Priority entries
+
+A revert or a security fix should not wait behind the queue, and it
+should not skip the gate. `fm submit --armed --priority` queues the
+pull request ahead of every entry that has not started landing. Its
+candidate is main's tip plus itself; the candidates behind it are
+rebuilt on top of it, and their running runs are void. The tree that
+lands is proved before it lands, as for any entry. Two priority
+entries keep the order they were queued in. The cost is a run for
+every candidate behind it.
+
+On GitHub with the native queue, a priority entry uses the queue's
+own "jump to the front", where the API offers it (open item 7).
+
+### Recovery: a merge around the queue
+
+The queue cannot land anything while no runner is available, or
+while the advance step or `fm ci.run` is broken; the fix for either
+would have to land through the queue. For these cases a person merges
+the pull request around the queue, on purpose:
+`fm submit.merge --around-queue <number> --reason=<text>`.
+
+- It merges through the forge's own squash merge, as a landing does,
+  so the pull request reads merged and the forge signs.
+- It comments the reason on the pull request and removes the
+  `queued` label.
+- Main's push run gates the tree that landed. That tree was not
+  proved before it landed, so the run narrows from the nearest proved
+  tree and runs its legs, which is today's behaviour.
+- The next advance step finds main moved and rebuilds every candidate
+  on the new tip.
+
+On GitHub with the native queue, the ruleset's bypass list names the
+repository's admins, so only an admin can do this. On the other
+forges the branch protection's merge rights decide who can.
+
+This is a person's recovery procedure, not a step of the merge path,
+so contract 6 holds: the automatic path never waits on it.
+
 ### GitHub's native queue
 
 `livery.forge.Capability` gains `merge_queue`. GitHub answers true
@@ -289,6 +335,9 @@ whose native queue cannot do it refuses it by name at
   yields another tree; no worse than today.
 - A merge made around the queue on GitHub without the native queue,
   or on Gitea or GitLab, is caught after it lands, by the tree check.
+- A priority entry costs every candidate behind it a run.
+- A recovery merge lands a tree no run proved before it landed; the
+  push run proves it after, as today.
 
 ## Phases
 
@@ -348,15 +397,23 @@ Deliverables:
   pull request's own run skips; the gate job posts `gate` on each head
   whose chain is green.
 - `fm status` prints the queue.
+- `fm submit --armed --priority`, and the priority label declared
+  through `RepoConfig.labels`.
+- `fm submit.merge --around-queue <number> --reason=<text>`, refusing
+  without a reason.
 - Docs: `packages/workshop/docs/development-patterns.md`, "What the
   forge does with several green pull requests" rewritten to the
-  queue.
+  queue, with priority entries and the recovery merge.
 
 Tests, refusals and fallbacks first: a lost update re-done, a lost
 label re-applied, a moved head voids its entry, a draft refused, a red
 candidate dropped and the ones behind rebuilt, a conflicting rebuild
 dropped, a tree mismatch falls back to the push run's legs, an empty
-queue, the advance step twice changes nothing; then the green path.
+queue, the advance step twice changes nothing, a recovery merge
+without a reason refused, a recovery merge followed by an advance
+step that rebuilds every candidate, a priority entry queued behind
+running candidates that rebuilds them on top of it; then the green
+path.
 
 **Acceptance**
 
@@ -387,9 +444,11 @@ run starts, the queue reads empty, and every push run's gate prints
 
 Deliverables: the `merge_queue` capability and its probe;
 `RepoConfig.merge_queue`, declared by `[ci] merge-queue = true`, and
-governance writing the ruleset `workshop-merge-queue`; the gate
-point's `merge_group` event; `fm ci.run` on that event; the advance
-step building nothing where the capability is present. Conformance
+governance writing the ruleset `workshop-merge-queue`, its bypass
+list naming the repository's admins; the gate point's `merge_group`
+event; `fm ci.run` on that event; the advance step building nothing
+where the capability is present; a priority entry jumping the native
+queue where the API offers it. Conformance
 scenario `merge-queue` recorded on a scratch repository owned by an
 organization.
 
@@ -490,11 +549,18 @@ fails.
   where one gate covered a whole train. A red batched group runs every
   candidate of the group in parallel, replacing one at a time, and a
   bisect for large groups is open item 9.
+- 2026-11-21, Willem asked whether there is any reason not to use the
+  queue once it exists, and agreed to the three answers: priority
+  entries for urgent changes, which still pass the gate; a merge
+  around the queue as a person's recovery procedure for when the
+  queue cannot land; and every write to main going through the queue
+  (contract 14), read the same day as true of every verb.
 
 ## Open
 
-1. Willem: the names: the advance step's verb, the label `queued`
-   and the branch prefix `queue/`.
+1. Willem: the names: the advance step's verb, the label `queued`,
+   the priority label, the branch prefix `queue/`, and the spellings
+   `--priority` and `--around-queue`.
 2. Willem: the order against `notes/20261012-what-a-change-affects.md`.
    Recommendation: phases 1 to 3 here first on package-grain
    narrowing, since that plan's open items 1 to 4 are still unruled.
@@ -511,7 +577,8 @@ fails.
    step names any it lacks.
 7. Agent, phase 4: whether GitHub's queue runs one candidate per
    entry, which sets its runner cost; whether it needs
-   `block_on_outdated` off.
+   `block_on_outdated` off; whether its API offers "jump to the
+   front" for a priority entry.
 8. Agent, phase 4: GitLab Premium's merge trains as the same
    capability, tested as a decline on gitlab-ce until a Premium
    instance gives a cassette.
