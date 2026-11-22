@@ -122,6 +122,7 @@ All on 2026-11-22. The review note has the methods and their limits.
 | What one more pytest process costs | Median 1.06 s on Windows, 0.61 s on ubuntu, 0.52 s on macOS |
 | The hook on Windows | Loaded in 332 of 332 pytest processes. 439 of 502 Python children kept it. The three platforms recorded the same 667 modules |
 | Footprints that differ between two runs | 1 of 331, by one text read |
+| A private repository on GitHub's Free plan | Takes a draft pull request. Refuses branch protection and rulesets with 403 |
 | Entries ahead of a merge when it queues | 0 for 65% to 75%, mean 0.3 to 0.5, max 8 |
 | A CI run that runs no leg | 5.9 min, about 20 runner-minutes |
 | Pull requests pushed again after their first run | 27 of 117 |
@@ -491,9 +492,10 @@ project's own ledger are designed in a record of their own after part F.
   place for it.
 - A static graph of a test file's imports, and a forecast of which
   streams overlap.
-- A forge whose plan has no drafts or no way to refuse an unproved merge.
-  The capability refuses by name, and what the queue then promises there
-  is open item 9.
+- Refusing an unproved merge on a repository with no branch protection,
+  such as a private GitHub repository on the Free plan. The queue works
+  there unchanged. `fm queue` and `fm submit` warn that a merge around it
+  cannot be refused.
 
 ## Parts and phases
 
@@ -735,7 +737,8 @@ builder, the candidate's run. Auto-merge still lands.
 expected head, the drop. Auto-merge goes. Armed pull requests are moved
 to the label by the phase's own task.
 
-Tests, each before the green path: two updates at once, a head pushed
+Tests, each before the green path: a repository with no protection,
+which lands through the queue and warns, two updates at once, a head pushed
 between the check and the merge, a landing the forge refuses, a run that
 did not finish, a conflict at the build, an empty queue, a second update
 that changes nothing.
@@ -819,6 +822,11 @@ a person.
   footprint, and the static closure is not built. The footprint selects
   15.9% where a sound static closure ends at 34% to 43%, and recording
   costs 2% on a Mac.
+- 2026-11-22, Willem, on a repository with no branch protection: "I
+  don't think we should limit anything if branch protection is not
+  available. They'll just have to be warned." Closes open item 9. Probed
+  the same day on a private repository on GitHub's Free plan: protection
+  and rulesets answer 403, and a draft pull request is accepted.
 - 2026-11-22, mine, from the hosted runners: each test file runs in a
   process of its own, the longest started first. That costs 2.9% on
   Windows and 3.8% on ubuntu against one session, the hook loads in every
@@ -857,10 +865,8 @@ a person.
    before G1.
 8. **The scheduled full run for a project on a free plan**: on or off by
    default, and how often. Willem, at A2.
-9. **What the queue promises on a forge that cannot refuse an unproved
-   merge**, such as a GitLab project with no protection. Proposal: it
-   lands in order and proves first, and `fm queue` says that a merge
-   around it cannot be refused there. Willem, before F4.
+9. Ruled on 2026-11-22: a repository with no branch protection gets the
+   whole queue and a warning. See the decision record.
 10. **The trigger names**: `pull-request`, `candidate`, `merge`,
     `scheduled`, `release`, and the trusted `queue`. Willem, before D1.
 11. **The bot on this repository**: whose token, with which rights, until

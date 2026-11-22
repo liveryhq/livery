@@ -357,8 +357,10 @@ from "did not finish", and a stated answer for a flaky red.
    branch protection (`F/_gitlab.py:390`), against contract 4. The rebase
    API is asynchronous and changes the head, which voids the entry by the
    plan's own rule and orphans a posted status.
-5. **Drafts.** GitHub offers no drafts in private repositories on Free or
-   Pro. Gitea has no draft events. `is_armed` is read as "will this land"
+5. **Drafts.** GitHub has drafts in a private repository on the Free
+   plan. This item first said it had none there, from memory, and that
+   was wrong: a probe on 2026-11-22 opened a draft pull request in one,
+   marked it ready and made it a draft again. Gitea has no draft events. `is_armed` is read as "will this land"
    in the verdict classifier (`W/_verdict.py:615`, green and not armed
    exits 11), the follow, the workflow engine and `disarm_before_push`. The
    plan lists none of these readers. One question on `livery.forge`, "is
@@ -1313,6 +1315,13 @@ step 3 depends on for the queue's identity.
   and an observing plugin: "fair!" On the receipt files written at every
   sync: "that should be fixed then". The fix is on the branch
   `fix/receipt-files-written-only-when-changed`.
+- 2026-11-22, on a repository whose plan has no branch protection: "I
+  don't think we should limit anything if branch protection is not
+  available. They'll just have to be warned." The probe that day, on a
+  private repository on GitHub's Free plan: reading branch protection and
+  reading rulesets both answer 403, "Upgrade to GitHub Pro or make this
+  repository public to enable this feature". A Free organization's
+  private repository was not probed.
 
 ## For Willem to rule
 
