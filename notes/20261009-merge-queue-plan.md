@@ -163,8 +163,14 @@ is batching, a setting described below.
 
 ### Membership
 
-Membership is the label `queued`. `fm submit --armed` applies it; the
-order is the time the label was applied, then the pull request number.
+Membership is the label `queue:armed`. `fm submit --armed` applies it;
+the order is the time the label was applied, then the pull request
+number. On the workshop's queue, arming arms nothing on the forge: the
+advance step lands each entry in order, and a forge's own auto-merge
+would land out of order, from a tree the queue did not build. On
+GitHub with the native queue, `--armed` also enters GitHub's queue.
+`fm submit.arm` adds the label and `fm submit.disarm` removes it, and
+a person can add or remove it on the forge's own page.
 
 - **A draft is never queued.** `fm submit --armed` on a draft marks it
   ready, then queues it. Marking a queued pull request draft removes
@@ -261,18 +267,19 @@ A platform-only failure in entry k voids the runs of every candidate
 behind it, since each contains k. The local gate before `fm submit`
 covers one platform. Open item 5 measures how often this happens.
 
-### Priority entries
+### Urgent entries
 
 A revert or a security fix should not wait behind the queue, and it
-should not skip the gate. `fm submit --armed --priority` queues the
-pull request ahead of every entry that has not started landing. Its
+should not skip the gate. `fm submit --urgent` adds the label
+`queue:urgent` beside `queue:armed`, and queues the pull request ahead
+of every entry that has not started landing. Its
 candidate is main's tip plus itself; the candidates behind it are
 rebuilt on top of it, and their running runs are void. The tree that
-lands is proved before it lands, as for any entry. Two priority
+lands is proved before it lands, as for any entry. Two urgent
 entries keep the order they were queued in. The cost is a run for
 every candidate behind it.
 
-On GitHub with the native queue, a priority entry uses the queue's
+On GitHub with the native queue, an urgent entry uses the queue's
 own "jump to the front", where the API offers it (open item 7).
 
 ### Recovery: a merge around the queue
@@ -286,7 +293,7 @@ the pull request around the queue, on purpose:
 - It merges through the forge's own squash merge, as a landing does,
   so the pull request reads merged and the forge signs.
 - It comments the reason on the pull request and removes the
-  `queued` label.
+  `queue:armed` and `queue:urgent` labels.
 - Main's push run gates the tree that landed. That tree was not
   proved before it landed, so the run narrows from the nearest proved
   tree and runs its legs, which is today's behaviour.
@@ -335,7 +342,7 @@ whose native queue cannot do it refuses it by name at
   yields another tree; no worse than today.
 - A merge made around the queue on GitHub without the native queue,
   or on Gitea or GitLab, is caught after it lands, by the tree check.
-- A priority entry costs every candidate behind it a run.
+- An urgent entry costs every candidate behind it a run.
 - A recovery merge lands a tree no run proved before it landed; the
   push run proves it after, as today.
 
@@ -386,9 +393,10 @@ stops for Willem before phase 2.
 
 Deliverables:
 
-- The `queued` label, declared through `RepoConfig.labels`.
-- `fm submit --armed` labels and prints the position; `fm submit`
-  opens a draft.
+- The `queue:armed` label, declared through `RepoConfig.labels`.
+- `fm submit --armed` labels and prints the position, arming nothing
+  on the forge; `fm submit.arm` and `fm submit.disarm` add and remove
+  the label; `fm submit` opens a draft.
 - The advance step (open item 1 names it): builds the `queue/`
   candidates, lands, drops red entries, rebuilds, and runs from the
   merge point, from a candidate run's verdict and from the pull
@@ -397,13 +405,13 @@ Deliverables:
   pull request's own run skips; the gate job posts `gate` on each head
   whose chain is green.
 - `fm status` prints the queue.
-- `fm submit --armed --priority`, and the priority label declared
-  through `RepoConfig.labels`.
+- `fm submit --urgent`, and the `queue:urgent` label declared through
+  `RepoConfig.labels`.
 - `fm submit.merge --around-queue <number> --reason=<text>`, refusing
   without a reason.
 - Docs: `packages/workshop/docs/development-patterns.md`, "What the
   forge does with several green pull requests" rewritten to the
-  queue, with priority entries and the recovery merge.
+  queue, with urgent entries and the recovery merge.
 
 Tests, refusals and fallbacks first: a lost update re-done, a lost
 label re-applied, a moved head voids its entry, a draft refused, a red
@@ -411,7 +419,7 @@ candidate dropped and the ones behind rebuilt, a conflicting rebuild
 dropped, a tree mismatch falls back to the push run's legs, an empty
 queue, the advance step twice changes nothing, a recovery merge
 without a reason refused, a recovery merge followed by an advance
-step that rebuilds every candidate, a priority entry queued behind
+step that rebuilds every candidate, an urgent entry queued behind
 running candidates that rebuilds them on top of it; then the green
 path.
 
@@ -447,7 +455,7 @@ Deliverables: the `merge_queue` capability and its probe;
 governance writing the ruleset `workshop-merge-queue`, its bypass
 list naming the repository's admins; the gate point's `merge_group`
 event; `fm ci.run` on that event; the advance step building nothing
-where the capability is present; a priority entry jumping the native
+where the capability is present; an urgent entry jumping the native
 queue where the API offers it. Conformance
 scenario `merge-queue` recorded on a scratch repository owned by an
 organization.
@@ -555,12 +563,18 @@ fails.
   around the queue as a person's recovery procedure for when the
   queue cannot land; and every write to main going through the queue
   (contract 14), read the same day as true of every verb.
+- 2026-11-22, Willem: the membership label is `queue:armed`, so it
+  matches the `--armed` flag; a bare `armed` label would not say what
+  is armed, and `queue:land` reads worse. The priority label is
+  `queue:urgent`, and the flag is renamed from `--priority` to
+  `--urgent` to match it. `mergeable` was set aside: it is the forges'
+  word for "the forge can merge this now". Under the workshop's queue,
+  `--armed` arms nothing on the forge.
 
 ## Open
 
-1. Willem: the names: the advance step's verb, the label `queued`,
-   the priority label, the branch prefix `queue/`, and the spellings
-   `--priority` and `--around-queue`.
+1. Willem: the names: the advance step's verb, the branch prefix
+   `queue/`, and the spelling `--around-queue`.
 2. Willem: the order against `notes/20261012-what-a-change-affects.md`.
    Recommendation: phases 1 to 3 here first on package-grain
    narrowing, since that plan's open items 1 to 4 are still unruled.
@@ -578,7 +592,7 @@ fails.
 7. Agent, phase 4: whether GitHub's queue runs one candidate per
    entry, which sets its runner cost; whether it needs
    `block_on_outdated` off; whether its API offers "jump to the
-   front" for a priority entry.
+   front" for an urgent entry.
 8. Agent, phase 4: GitLab Premium's merge trains as the same
    capability, tested as a decline on gitlab-ce until a Premium
    instance gives a cassette.
