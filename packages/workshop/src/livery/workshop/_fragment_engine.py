@@ -612,9 +612,22 @@ def write_rendered(directory: Path, receipts: Mapping[str, str]) -> None:
         if path.is_file():
             path.unlink()
         return
-    path.write_bytes(
-        (json.dumps(dict(sorted(receipts.items())), indent=2) + "\n").encode()
+    _write_changed(
+        path, (json.dumps(dict(sorted(receipts.items())), indent=2) + "\n").encode()
     )
+
+
+def _write_changed(path: Path, body: bytes) -> None:
+    """Write *body* to *path*, unless the file already holds it.
+
+    A sync that changes nothing then opens no receipt file for writing.
+    A write of equal bytes still moves the file's modification time, and
+    a workspace has one receipt file for each directory the engine writes
+    into.
+    """
+    if path.is_file() and _committed(path) == body:
+        return
+    path.write_bytes(body)
 
 
 def _write(root: Path, output: Output, recorded: str | None) -> tuple[bool, str]:
@@ -763,8 +776,8 @@ def _read_local(root: Path) -> dict[str, str]:
 def _write_local(root: Path, receipts: Mapping[str, str]) -> None:
     path = root / LOCAL_RECEIPT
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(
-        (json.dumps(dict(sorted(receipts.items())), indent=2) + "\n").encode()
+    _write_changed(
+        path, (json.dumps(dict(sorted(receipts.items())), indent=2) + "\n").encode()
     )
 
 
